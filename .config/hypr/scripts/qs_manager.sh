@@ -23,7 +23,13 @@ SUBTARGET="$3"
 # -----------------------------------------------------------------------------
 # FAST PATH: WORKSPACE SWITCHING
 # -----------------------------------------------------------------------------
+WORKSPACE_COUNT=$(jq -r '.workspaceCount // 4' "$HOME/.config/hypr/settings.json" 2>/dev/null)
+[[ "$WORKSPACE_COUNT" =~ ^[0-9]+$ ]] || WORKSPACE_COUNT=10
+
 if [[ "$ACTION" =~ ^[0-9]+$ ]]; then
+    if ((ACTION > WORKSPACE_COUNT )); then
+        exit 1  
+    fi
     WORKSPACE_NUM="$ACTION"
     echo "close" > "$IPC_FILE"
     
@@ -32,15 +38,20 @@ if [[ "$ACTION" =~ ^[0-9]+$ ]]; then
     hyprctl --batch "dispatch $CMD" >/dev/null 2>&1
     exit 0
 fi
-# TODO: подвязать к настройкам и парсить количество воркспейсов
+
 if [[ "$ACTION" == "prev" || "$ACTION" == "next" ]]; then
     echo "close" > "$IPC_FILE"
     CURRENT=$(hyprctl activeworkspace -j | jq '.id')
+
+    # Циклическое переключение:
+    # next: если текущий последний → на первый, иначе +1
+    # prev: если текущий первый → на последний, иначе -1
     if [[ "$ACTION" == "next" ]]; then
-        TARGET=$(( CURRENT % 4 + 1 ))
+        TARGET=$(( CURRENT % WORKSPACE_COUNT + 1 ))
     else
-        TARGET=$(( (CURRENT - 2 + 4) % 4 + 1 ))
+        TARGET=$(( (CURRENT - 2 + WORKSPACE_COUNT) % WORKSPACE_COUNT + 1 ))
     fi
+
     if [[ "$2" == "move" ]]; then
         hyprctl --batch "dispatch movetoworkspace $TARGET" >/dev/null 2>&1
     else
