@@ -1786,8 +1786,8 @@ echo -e "  -> Syncing installer-owned fields to settings.json..."
 UPSTREAM_KEYBINDS_CONF="$REPO_DIR/.config/hypr/config/keybindings.conf"
 UPSTREAM_BINDS_JSON="[]"
 
-if [ -f "$UPSTREAM_KEYBINDS_CONF" ]; then
-    echo -e "  -> Parsing upstream $UPSTREAM_KEYBINDS_CONF into settings.json..."
+if [ "$OPT_OVERRIDE_KEYBINDS" = true ] && [ -f "$UPSTREAM_KEYBINDS_CONF" ]; then
+    echo -e "  -> Parsing upstream $UPSTREAM_KEYBINDS_CONF into settings.json (Override Keybinds ON)..."
     TMP_BINDS=$(mktemp)
     
     # Helper function for safe, pure bash string trimming
@@ -1836,7 +1836,7 @@ if [ -f "$UPSTREAM_KEYBINDS_CONF" ]; then
     fi
     rm -f "$TMP_BINDS"
 else
-    echo -e "  -> \e[33mUpstream keybindings.conf not found. Skipping keybind parsing.\e[0m"
+    : # Override включен - апстрим не трогаем
 fi
 
 # 2. Extract LOCAL keybinds from the existing settings.json
@@ -1866,8 +1866,8 @@ fi
 UPSTREAM_STARTUPS_CONF="$REPO_DIR/.config/hypr/config/autostart.conf"
 UPSTREAM_STARTUPS_JSON="[]"
 
-if [ -f "$UPSTREAM_STARTUPS_CONF" ]; then
-    echo -e "  -> Parsing upstream $UPSTREAM_STARTUPS_CONF into settings.json..."
+if [ "$OPT_OVERRIDE_STARTUPS" = true ] && [ -f "$UPSTREAM_STARTUPS_CONF" ]; then
+    echo -e "  -> Parsing upstream $UPSTREAM_STARTUPS_CONF into settings.json (Override Startups ON)..."
     TMP_STARTUPS=$(mktemp)
 
     while IFS= read -r line || [ -n "$line" ]; do
@@ -1889,7 +1889,7 @@ if [ -f "$UPSTREAM_STARTUPS_CONF" ]; then
     fi
     rm -f "$TMP_STARTUPS"
 else
-    echo -e "  -> \e[33mUpstream autostart.conf not found. Skipping autostart parsing.\e[0m"
+    : # Override включен - апстрим не трогаем
 fi
 
 # 3.4. Extract LOCAL startups from the existing settings.json

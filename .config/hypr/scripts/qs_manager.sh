@@ -24,7 +24,7 @@ SUBTARGET="$3"
 # FAST PATH: WORKSPACE SWITCHING
 # -----------------------------------------------------------------------------
 WORKSPACE_COUNT=$(jq -r '.workspaceCount // 4' "$HOME/.config/hypr/settings.json" 2>/dev/null)
-[[ "$WORKSPACE_COUNT" =~ ^[0-9]+$ ]] || WORKSPACE_COUNT=10
+[[ "$WORKSPACE_COUNT" =~ ^[0-9]+$ ]] || WORKSPACE_COUNT=8
 
 if [[ "$ACTION" =~ ^[0-9]+$ ]]; then
     if ((ACTION > WORKSPACE_COUNT )); then
