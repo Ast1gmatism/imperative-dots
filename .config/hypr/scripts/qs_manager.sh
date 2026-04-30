@@ -32,6 +32,22 @@ if [[ "$ACTION" =~ ^[0-9]+$ ]]; then
     hyprctl --batch "dispatch $CMD" >/dev/null 2>&1
     exit 0
 fi
+# TODO: подвязать к настройкам и парсить количество воркспейсов
+if [[ "$ACTION" == "prev" || "$ACTION" == "next" ]]; then
+    echo "close" > "$IPC_FILE"
+    CURRENT=$(hyprctl activeworkspace -j | jq '.id')
+    if [[ "$ACTION" == "next" ]]; then
+        TARGET=$(( CURRENT % 4 + 1 ))
+    else
+        TARGET=$(( (CURRENT - 2 + 4) % 4 + 1 ))
+    fi
+    if [[ "$2" == "move" ]]; then
+        hyprctl --batch "dispatch movetoworkspace $TARGET" >/dev/null 2>&1
+    else
+        hyprctl --batch "dispatch workspace $TARGET" >/dev/null 2>&1
+    fi
+    exit 0
+fi
 
 MANIFEST="$THUMB_DIR/.manifest"
 
@@ -119,15 +135,15 @@ handle_wallpaper_prep() {
 
     ) </dev/null >/dev/null 2>&1 &
 
-    # swww/mpvpaper detection (unchanged, fast)
+    # awww/mpvpaper detection (unchanged, fast)
     TARGET_THUMB=""
     CURRENT_SRC=""
     if pgrep -a "mpvpaper" > /dev/null; then
         CURRENT_SRC=$(pgrep -a mpvpaper | grep -o "$SRC_DIR/[^' ]*" | head -n1)
         CURRENT_SRC=$(basename "$CURRENT_SRC")
     fi
-    if [ -z "$CURRENT_SRC" ] && command -v swww >/dev/null; then
-        CURRENT_SRC=$(swww query 2>/dev/null | grep -o "$SRC_DIR/[^ ]*" | head -n1)
+    if [ -z "$CURRENT_SRC" ] && command -v awww >/dev/null; then
+        CURRENT_SRC=$(awww query 2>/dev/null | grep -o "$SRC_DIR/[^ ]*" | head -n1)
         CURRENT_SRC=$(basename "$CURRENT_SRC")
     fi
     if [ -n "$CURRENT_SRC" ]; then

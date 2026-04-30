@@ -6,9 +6,16 @@ bar_spacing = 1
 sensitivity = 75
 autosens = 1
 
+[output]
+orientation = horizontal
+channels = mono
+mono_option = average
+
+
 [smoothing]
 integral = 80
-monstercat = 1
+monstercat = 0
+waves = 0
 gravity = 120
 ignore = 0
 noise_reduction = 77
