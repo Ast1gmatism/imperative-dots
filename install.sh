@@ -125,7 +125,7 @@ HAS_NVIDIA_PROPRIETARY=false
 LAST_COMMIT=""
 KEEP_OLD_ENV=true # Default to preserving existing weather config
 
-ENABLE_TELEMETRY=true # Default telemetry state to ON
+ENABLE_TELEMETRY=false # Default telemetry state to ON
 
 # Submenu Completion Tracking
 VISITED_PKGS=false
