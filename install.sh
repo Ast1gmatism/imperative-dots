@@ -1260,7 +1260,7 @@ fi
 
 # --- 3. Repository Cloning & Wallpapers ---
 echo -e "\n${C_CYAN}[ INFO ]${RESET} Setting up Dotfiles Repository..."
-REPO_URL="https://github.com/ilyamiro/imperative-dots.git"
+REPO_URL="https://github.com/Ast1gmatism/imperative-dots"
 CLONE_DIR="$HOME/.hyprland-dots"
 
 # Determine Git versioning states for partial updates
