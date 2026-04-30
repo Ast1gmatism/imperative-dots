@@ -2080,12 +2080,61 @@ Item {
                 transform: Translate { y: slideY }
                 Behavior on opacity { NumberAnimation { duration: 250 } }
 
-                Text {
+                RowLayout {
                     anchors.centerIn: parent
-                    text: "coming soon"
-                    font.family: "JetBrains Mono"
-                    font.pixelSize: root.s(24)
-                    color: root.subtext0
+                    spacing: root.s(30)
+
+                    Repeater {
+                        model: [
+                            { name: "NixOS Config", icon: "", color: "blue", url: "https://github.com/ilyamiro/nixos-configuration" },
+                            { name: "Imperative Dots", icon: "󰣇", color: "mauve", url: "https://github.com/ilyamiro/imperative-dots" },
+                            { name: "Wallpapers", icon: "", color: "peach", url: "https://github.com/ilyamiro/shell-wallpapers" }
+                        ]
+
+                        Rectangle {
+                            Layout.preferredWidth: root.s(140)
+                            Layout.preferredHeight: root.s(140)
+                            radius: root.s(16)
+                            color: repoMa.containsMouse ? Qt.alpha(root[modelData.color], 0.15) : Qt.alpha(root.surface0, 0.4)
+                            border.color: repoMa.containsMouse ? root[modelData.color] : root.surface1
+                            border.width: 1
+                            scale: repoMa.pressed ? 0.95 : (repoMa.containsMouse ? 1.05 : 1.0)
+
+                            Behavior on scale { NumberAnimation { duration: 200; easing.type: Easing.OutBack } }
+                            Behavior on color { ColorAnimation { duration: 200 } }
+                            Behavior on border.color { ColorAnimation { duration: 200 } }
+
+                            ColumnLayout {
+                                anchors.centerIn: parent
+                                spacing: root.s(15)
+
+                                Text {
+                                    text: modelData.icon
+                                    font.family: "Iosevka Nerd Font"
+                                    font.pixelSize: root.s(42)
+                                    color: root[modelData.color]
+                                    Layout.alignment: Qt.AlignHCenter
+                                }
+
+                                Text {
+                                    text: modelData.name
+                                    font.family: "JetBrains Mono"
+                                    font.weight: Font.Bold
+                                    font.pixelSize: root.s(13)
+                                    color: root.text
+                                    Layout.alignment: Qt.AlignHCenter
+                                }
+                            }
+
+                            MouseArea {
+                                id: repoMa
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: Quickshell.execDetached(["xdg-open", modelData.url])
+                            }
+                        }
+                    }
                 }
             }
         }
