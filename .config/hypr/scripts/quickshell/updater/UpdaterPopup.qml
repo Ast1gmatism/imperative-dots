@@ -77,7 +77,7 @@ Item {
     }
 
     Process {
-        command: ["bash", "-c", "curl -m 5 -s https://raw.githubusercontent.com/ilyamiro/imperative-dots/master/install.sh | grep '^DOTS_VERSION=' | cut -d'\"' -f2"]
+        command: ["bash", "-c", "curl -m 5 -s https://raw.githubusercontent.com/Ast1gmatism/imperative-dots/master/install.sh | grep '^DOTS_VERSION=' | cut -d'\"' -f2"]
         running: true
         stdout: StdioCollector {
             onStreamFinished: {
@@ -91,7 +91,7 @@ Item {
     property string fetchScript: `
 import urllib.request, json, subprocess
 
-repo = 'ilyamiro/imperative-dots'
+repo = 'Ast1gmatism/imperative-dots'
 
 try:
     local = subprocess.check_output("source ~/.local/state/imperative-dots-version 2>/dev/null && echo $LOCAL_VERSION", shell=True).decode('utf-8').strip()
@@ -527,7 +527,7 @@ except Exception as e:
                     easing.type: Easing.InSine
                     onFinished: {
                         updateBtn.triggered = true;
-                        let cmd = "if command -v kitty >/dev/null 2>&1; then kitty --hold bash -c 'eval \"$(curl -fsSL https://raw.githubusercontent.com/ilyamiro/imperative-dots/master/install.sh)\"'; else ${TERM:-xterm} -hold -e bash -c 'eval \"$(curl -fsSL https://raw.githubusercontent.com/ilyamiro/imperative-dots/master/install.sh)\"'; fi";
+                        let cmd = "if command -v kitty >/dev/null 2>&1; then kitty --hold bash -c 'eval \"$(curl -fsSL https://raw.githubusercontent.com/Ast1gmatism/imperative-dots/master/install.sh)\"'; else ${TERM:-xterm} -hold -e bash -c 'eval \"$(curl -fsSL https://raw.githubusercontent.com/Ast1gmatism/imperative-dots/master/install.sh)\"'; fi";
                         Quickshell.execDetached(["bash", "-c", cmd]);
                         Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh", "close"]);
                     }
