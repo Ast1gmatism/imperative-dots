@@ -90,12 +90,14 @@ WEATHER_CITY_ID=""
 WEATHER_UNIT=""
 FAILED_PKGS=()
 
+LOCAL_DEV=false
 TARGET_BRANCH="master"
 
 # Check if the --dev flag was passed
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         --dev) TARGET_BRANCH="dev"; shift ;;
+        --local) LOCAL_DEV=true; shift ;;
         *) shift ;;
     esac
 done
@@ -125,7 +127,7 @@ HAS_NVIDIA_PROPRIETARY=false
 LAST_COMMIT=""
 KEEP_OLD_ENV=true # Default to preserving existing weather config
 
-ENABLE_TELEMETRY=true # Default telemetry state to ON
+ENABLE_TELEMETRY=false # Default telemetry state to ON
 
 # Submenu Completion Tracking
 VISITED_PKGS=false
@@ -1260,7 +1262,7 @@ fi
 
 # --- 3. Repository Cloning & Wallpapers ---
 echo -e "\n${C_CYAN}[ INFO ]${RESET} Setting up Dotfiles Repository..."
-REPO_URL="https://github.com/ilyamiro/imperative-dots.git"
+REPO_URL="https://github.com/Ast1gmatism/imperative-dots"
 CLONE_DIR="$HOME/.hyprland-dots"
 
 # Determine Git versioning states for partial updates
@@ -1270,7 +1272,18 @@ NEW_COMMIT=""
 # Only treat it as a local dev repo if they are NOT inside the default clone directory.
 # Added checks to ensure we are NOT in $HOME and that a .git folder exists.
 # This prevents the script from treating the user's home directory as the source repository.
-if [ -f "$(pwd)/install.sh" ] && [ -d "$(pwd)/.config" ] && [ -d "$(pwd)/.git" ] && [ "$(pwd)" != "$CLONE_DIR" ] && [ "$(pwd)" != "$HOME" ]; then
+if [ "$LOCAL_DEV" = true ]; then
+    SCRIPT_OWN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    if [ -d "$SCRIPT_OWN_DIR/.git" ]; then
+        REPO_DIR="$SCRIPT_OWN_DIR"
+        NEW_COMMIT=$(git -C "$REPO_DIR" rev-parse HEAD 2>/dev/null)
+        OLD_COMMIT="$LAST_COMMIT"
+        echo "  -> [--local] Используется локальная версия: $REPO_DIR, git pull пропущен"
+    else
+        echo -e "${C_RED}[--local] .git не найден рядом со скриптом ($SCRIPT_OWN_DIR).${RESET}"
+        exit 1
+    fi
+elif [ -f "$(pwd)/install.sh" ] && [ -d "$(pwd)/.config" ] && [ -d "$(pwd)/.git" ] && [ "$(pwd)" != "$CLONE_DIR" ] && [ "$(pwd)" != "$HOME" ]; then
     REPO_DIR="$(pwd)"
     echo "  -> Running from local development repository at $REPO_DIR"
     NEW_COMMIT=$(git -C "$REPO_DIR" rev-parse HEAD 2>/dev/null)
@@ -1417,6 +1430,11 @@ if [ "$DO_FULL_INSTALL" = true ]; then
                 mv "$TARGET_PATH" "$BACKUP_DIR/$folder"
             fi
             cp -r "$SOURCE_PATH" "$TARGET_PATH"
+            if [ -f "$BACKUP_DIR/$folder/config/apply_once.conf" ]; then
+                cp "$BACKUP_DIR/$folder/config/apply_once.conf" "$TARGET_PATH/config/apply_once.conf"
+            else
+                rm -f "$TARGET_PATH/config/apply_once.conf"
+            fi
             printf "  -> Copied %-31s ${C_GREEN}[ OK ]${RESET}\n" "$folder"
         fi
     done
@@ -1786,8 +1804,8 @@ echo -e "  -> Syncing installer-owned fields to settings.json..."
 UPSTREAM_KEYBINDS_CONF="$REPO_DIR/.config/hypr/config/keybindings.conf"
 UPSTREAM_BINDS_JSON="[]"
 
-if [ -f "$UPSTREAM_KEYBINDS_CONF" ]; then
-    echo -e "  -> Parsing upstream $UPSTREAM_KEYBINDS_CONF into settings.json..."
+if [ "$OPT_OVERRIDE_KEYBINDS" = true ] && [ -f "$UPSTREAM_KEYBINDS_CONF" ]; then
+    echo -e "  -> Parsing upstream $UPSTREAM_KEYBINDS_CONF into settings.json (Override Keybinds ON)..."
     TMP_BINDS=$(mktemp)
     
     # Helper function for safe, pure bash string trimming
@@ -1836,7 +1854,7 @@ if [ -f "$UPSTREAM_KEYBINDS_CONF" ]; then
     fi
     rm -f "$TMP_BINDS"
 else
-    echo -e "  -> \e[33mUpstream keybindings.conf not found. Skipping keybind parsing.\e[0m"
+    : # Override включен - апстрим не трогаем
 fi
 
 # 2. Extract LOCAL keybinds from the existing settings.json
@@ -1866,8 +1884,8 @@ fi
 UPSTREAM_STARTUPS_CONF="$REPO_DIR/.config/hypr/config/autostart.conf"
 UPSTREAM_STARTUPS_JSON="[]"
 
-if [ -f "$UPSTREAM_STARTUPS_CONF" ]; then
-    echo -e "  -> Parsing upstream $UPSTREAM_STARTUPS_CONF into settings.json..."
+if [ "$OPT_OVERRIDE_STARTUPS" = true ] && [ -f "$UPSTREAM_STARTUPS_CONF" ]; then
+    echo -e "  -> Parsing upstream $UPSTREAM_STARTUPS_CONF into settings.json (Override Startups ON)..."
     TMP_STARTUPS=$(mktemp)
 
     while IFS= read -r line || [ -n "$line" ]; do
@@ -1889,7 +1907,7 @@ if [ -f "$UPSTREAM_STARTUPS_CONF" ]; then
     fi
     rm -f "$TMP_STARTUPS"
 else
-    echo -e "  -> \e[33mUpstream autostart.conf not found. Skipping autostart parsing.\e[0m"
+    : # Override включен - апстрим не трогаем
 fi
 
 # 3.4. Extract LOCAL startups from the existing settings.json
@@ -1918,6 +1936,45 @@ else
             )
         )
     ')
+fi
+
+# ==============================================================================
+# Apply once-off startup commands from apply_once.conf
+# ==============================================================================
+APPLY_ONCE_SOURCE="$REPO_DIR/.config/hypr/config/apply_once.conf"
+APPLY_ONCE_TARGET="$TARGET_CONFIG_DIR/hypr/config/apply_once.conf"
+
+if [ -f "$APPLY_ONCE_SOURCE" ]; then
+    [ ! -f "$APPLY_ONCE_TARGET" ] && cp "$APPLY_ONCE_SOURCE" "$APPLY_ONCE_TARGET"
+
+    CURRENT_CMDS=$(jq -r '.startup[]?.command // empty' "$SETTINGS_FILE" 2>/dev/null)
+
+    APPLY_ONCE_ENTRIES=()
+    while IFS= read -r line || [ -n "$line" ]; do
+        [[ "$line" =~ ^[[:space:]]*# ]] && continue   # комментарии
+        [[ -z "${line// }" ]] && continue              # пустые строки
+        [[ ! "$line" =~ ^[[:space:]]*exec-once[[:space:]]*= ]] && continue  # не exec-once
+
+        # Извлекаем команду без префикса
+        cmd="${line#*=}"
+        cmd="${cmd#"${cmd%%[![:space:]]*}"}"
+        cmd="${cmd%"${cmd##*[![:space:]]}"}"
+        [ -z "$cmd" ] && continue
+
+        # Добавляем только если нет в settings.json
+        if ! echo "$CURRENT_CMDS" | grep -qxF "$cmd"; then
+            APPLY_ONCE_ENTRIES+=("$cmd")
+        fi
+    done < "$APPLY_ONCE_SOURCE"
+
+    for cmd in "${APPLY_ONCE_ENTRIES[@]}"; do
+        MERGED_STARTUPS_JSON=$(jq --arg c "$cmd" \
+            'if map(.command) | index($c) == null then . += [{command: $c}] else . end' \
+            <<< "$MERGED_STARTUPS_JSON")
+        echo "exec-once = $cmd" >> "$APPLY_ONCE_TARGET"
+    done
+else
+    echo -e "  -> \e[33mapply_once.conf not found in repository. Skipping once-off commands.\e[0m"
 fi
 
 # 4. Inject merged arrays into settings.json
