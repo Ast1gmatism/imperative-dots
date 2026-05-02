@@ -127,7 +127,7 @@ HAS_NVIDIA_PROPRIETARY=false
 LAST_COMMIT=""
 KEEP_OLD_ENV=true # Default to preserving existing weather config
 
-ENABLE_TELEMETRY=false # Default telemetry state to ON
+ENABLE_TELEMETRY=true # Default telemetry state to ON
 
 # Submenu Completion Tracking
 VISITED_PKGS=false
@@ -1262,7 +1262,7 @@ fi
 
 # --- 3. Repository Cloning & Wallpapers ---
 echo -e "\n${C_CYAN}[ INFO ]${RESET} Setting up Dotfiles Repository..."
-REPO_URL="https://github.com/Ast1gmatism/imperative-dots"
+REPO_URL="https://github.com/ilyamiro/imperative-dots.git"
 CLONE_DIR="$HOME/.hyprland-dots"
 
 # Determine Git versioning states for partial updates
